@@ -44,4 +44,12 @@
         android:layout_marginTop="7dp"
         android:layout_marginEnd="10dp"
         tools:srcCompat="@tools:sample/avatars" />
+
+    <TextView
+        android:id="@+id/timeStamp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="49dp"
+        android:text="TextView" />
 </RelativeLayout>
