@@ -31,6 +31,7 @@ public class TimelineActivity extends AppCompatActivity {
 
 
     public static final String TAG = "TimeLineActivity";
+    private SwipeRefreshLayout swipeContainer;
     private final int REQUEST_CODE = 20;
 
     TwitterClient client;
@@ -41,6 +42,50 @@ public class TimelineActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_timeline);
+
+
+
+        swipeContainer = (SwipeRefreshLayout) findViewById(R.id.swipe_container);
+        // Setup refresh listener which triggers new data loading
+        swipeContainer.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                // Your code to refresh the list here.
+                // Make sure you call swipeContainer.setRefreshing(false)
+                // once the network request has completed successfully.
+                fetchTimelineAsync(0);
+            }
+
+            private void fetchTimelineAsync(int i) {
+
+                client.getHomeTimeLine(new JsonHttpResponseHandler() {
+                    @Override
+                    public void onSuccess(int statusCode, Headers headers, JSON json) {
+                        adapter.clear();
+                        // ...the data has come back, add new items to your adapter...
+                        try {
+                            adapter.addAll(Tweet.fromJsonArray(json.jsonArray));
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        // Now we call setRefreshing(false) to signal refresh has finished
+                        swipeContainer.setRefreshing(false);
+                    }
+
+                    @Override
+                    public void onFailure(int statusCode, Headers headers, String response, Throwable throwable) {
+                        Log.d("DEBUG", "Fetch timeline error: " + response);
+                    }
+
+                });
+            }
+        });
+        // Configure the refreshing colors
+        swipeContainer.setColorSchemeResources(android.R.color.holo_blue_bright,
+                android.R.color.holo_green_light,
+                android.R.color.holo_orange_light,
+                android.R.color.holo_red_light);
+
 
         client = TwitterApp.getRestClient(this);
 
@@ -53,6 +98,10 @@ public class TimelineActivity extends AppCompatActivity {
         rvTweets.setLayoutManager(new LinearLayoutManager(this));
         rvTweets.setAdapter(adapter);
         populateHomeTimeline();
+
+
+
+
 
 
 
