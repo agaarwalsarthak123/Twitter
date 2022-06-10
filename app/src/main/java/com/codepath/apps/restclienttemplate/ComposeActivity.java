@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.codepath.apps.restclienttemplate.models.Tweet;
@@ -26,6 +27,7 @@ public class ComposeActivity extends AppCompatActivity {
     public static final String TAG = "ComposeActivity";
 
     EditText etCompose;
+    ProgressBar progressBar;
     Button btnTweet;
     TwitterClient client;
 
@@ -38,21 +40,33 @@ public class ComposeActivity extends AppCompatActivity {
 
         etCompose = findViewById(R.id.etCompose);
         btnTweet = findViewById(R.id.btnTweet);
+        progressBar= (ProgressBar) findViewById(R.id.pbLoading);
+        progressBar.setVisibility(View.INVISIBLE);
 
         // Set click listener on button
         btnTweet.setOnClickListener(new View.OnClickListener() {
+
+
             @Override
             public void onClick(View view) {
                 String tweetContent = etCompose.getText().toString();
+
+                progressBar.setVisibility(View.VISIBLE);
                 if(tweetContent.isEmpty()) {
                     Toast.makeText(ComposeActivity.this, "Sorry your tweet cannot be empty", Toast.LENGTH_LONG).show();
+                    progressBar.setVisibility(View.INVISIBLE);
                     return;
                 }
                 if(tweetContent.length() > Max_Tweet_Length) {
                     Toast.makeText(ComposeActivity.this, "Sorry your tweet is to long", Toast.LENGTH_LONG).show();
+                    progressBar.setVisibility(View.INVISIBLE);
                     return;
                 }
                 Toast.makeText(ComposeActivity.this,tweetContent, Toast.LENGTH_LONG).show();
+
+
+                // run a background job and once complete
+
 
                 // Making an API call to Twitter to publish the tweet
                 client.publishTweet(tweetContent, new JsonHttpResponseHandler() {
@@ -67,6 +81,7 @@ public class ComposeActivity extends AppCompatActivity {
                             // set result code and bundle data for response
                             setResult(RESULT_OK, intent);
                             // closes the activity, pass data to parent
+                            progressBar.setVisibility(View.INVISIBLE);
                             finish();
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -80,6 +95,10 @@ public class ComposeActivity extends AppCompatActivity {
                 });
             }
         });
+
+        // on some click or some loading we need to wait for...
+
+
 
     }
 }

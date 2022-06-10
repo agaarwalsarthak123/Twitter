@@ -2,6 +2,13 @@ package com.codepath.apps.restclienttemplate.models;
 
 import android.text.format.DateUtils;
 import android.util.Log;
+import android.widget.ProgressBar;
+
+import androidx.room.ColumnInfo;
+import androidx.room.Entity;
+import androidx.room.ForeignKey;
+import androidx.room.Ignore;
+import androidx.room.PrimaryKey;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -15,14 +22,26 @@ import java.util.List;
 import java.util.Locale;
 
 @Parcel
+@Entity(foreignKeys = @ForeignKey(entity=User.class, parentColumns="id", childColumns="userId"))
 public class Tweet {
 
+    @ColumnInfo
+    @PrimaryKey
+    public long id;
+
+    @ColumnInfo
     public String body;
+    @ColumnInfo
     public String createdAt;
+
+    public Long userId;
+
+    @Ignore
     public User user;
     public String mediaUrl;
-
     public String date;
+
+
     // empty constructor needed by the Parceler library
     public Tweet() {}
 
@@ -43,6 +62,11 @@ public class Tweet {
         tweet.createdAt = jsonObject.getString("created_at");
         tweet.user = User.fromJson(jsonObject.getJSONObject("user"));
         tweet.date=getRelativeTimeAgo(tweet.createdAt);
+        User user = User.fromJson(jsonObject.getJSONObject("user"));
+        tweet.id =jsonObject.getLong("id");
+        tweet.userId = user.id;
+
+
         return tweet;
     }
 
@@ -86,11 +110,14 @@ public class Tweet {
                 return diff / DAY_MILLIS + " d";
             }
         } catch (ParseException e) {
-         //   Log.i(, "getRelativeTimeAgo failed");
+          //  Log.i(TAG, "getRelativeTimeAgo failed");
             e.printStackTrace();
         }
 
         return "";
     }
-    }
+}
+
+    // on some click or some loading we need to wait for...
+
 

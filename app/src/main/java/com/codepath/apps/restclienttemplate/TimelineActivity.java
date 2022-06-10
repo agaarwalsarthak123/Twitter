@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.format.DateUtils;
 import android.util.Log;
@@ -17,6 +18,9 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.codepath.apps.restclienttemplate.models.Tweet;
+import com.codepath.apps.restclienttemplate.models.TweetDao;
+import com.codepath.apps.restclienttemplate.models.TweetWithUser;
+import com.codepath.apps.restclienttemplate.models.User;
 import com.codepath.asynchttpclient.callback.JsonHttpResponseHandler;
 
 import org.json.JSONArray;
@@ -33,24 +37,43 @@ import okhttp3.Headers;
 
 public class TimelineActivity extends AppCompatActivity {
 
-
+    private EndlessRecyclerViewScrollListener scrollListener;
     public static final String TAG = "TimeLineActivity";
     private SwipeRefreshLayout swipeContainer;
     private final int REQUEST_CODE = 20;
 
+    TweetDao tweetDao;
     TwitterClient client;
     RecyclerView rvTweets;
     List<Tweet> tweets;
     TweetsAdapter adapter;
+    public long max_id;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_timeline);
 
+        rvTweets = findViewById(R.id.rvTweets);
+        // Initialize the list of tweets and adapters
+        tweets = new ArrayList<>();
+        adapter = new TweetsAdapter(this, tweets);
+        // Recycler view setup: Layout manager and the adapter
+        rvTweets.setLayoutManager(new LinearLayoutManager(this));
+        rvTweets.setAdapter(adapter);
+
+        scrollListener = new EndlessRecyclerViewScrollListener(new LinearLayoutManager(this)) {
+            @Override
+            public void onLoadMore(int page, int totalItemsCount, RecyclerView view) {
+                Log.d(TAG,"aaaAaAaAaAa");
+                loadNextDataFromApi(max_id);
+            }
+        };
+        rvTweets.addOnScrollListener(scrollListener);
 
 
         swipeContainer = (SwipeRefreshLayout) findViewById(R.id.swipe_container);
         // Setup refresh listener which triggers new data loading
+
         swipeContainer.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
@@ -59,6 +82,8 @@ public class TimelineActivity extends AppCompatActivity {
                 // once the network request has completed successfully.
                 fetchTimelineAsync(0);
             }
+
+
 
             private void fetchTimelineAsync(int i) {
 
@@ -92,16 +117,53 @@ public class TimelineActivity extends AppCompatActivity {
 
 
         client = TwitterApp.getRestClient(this);
+        tweetDao = ((TwitterApp) getApplicationContext()).getMyDatabase().tweetDao();
 
         // Find te recycler view
-        rvTweets = findViewById(R.id.rvTweets);
-        // Initialize the list of tweets and adapters
-        tweets = new ArrayList<>();
-        adapter = new TweetsAdapter(this, tweets);
-        // Recycler view setup: Layout manager and the adapter
-        rvTweets.setLayoutManager(new LinearLayoutManager(this));
-        rvTweets.setAdapter(adapter);
+
+
+
+        AsyncTask.execute(new Runnable() {
+            @Override
+            public void run() {
+                Log.i(TAG, "Showing data from database");
+                List<TweetWithUser> tweetWithUsers = tweetDao.recentItems();
+                List<Tweet> tweetsFromDB = TweetWithUser.getTweetList(tweetWithUsers);
+                adapter.clear();
+                adapter.addAll(tweetsFromDB);
+            }
+        });
         populateHomeTimeline();
+    }
+
+    public void loadNextDataFromApi(long id) {
+        Log.d(TAG,"AssSassaSasaSsaaSs");
+        client.getMoreHomeTimeline(new JsonHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Headers headers, JSON json) {
+              //  bar();
+                try {
+                    JSONArray jsonArray = json.jsonArray;
+                    Log.i(TAG, "onSuccess!  loadNextDataFromApi" + json.toString());
+                    tweets.addAll(Tweet.fromJsonArray(jsonArray));
+                    max_id = getMinId(tweets);
+                    adapter.notifyDataSetChanged();
+                    Log.i(TAG, "onSuccess! size is " + tweets.size());
+                    // hideprgrss
+
+                } catch (JSONException e) {
+                    Log.e(TAG, "Json exception");
+                    e.printStackTrace();
+                }
+                // hideprgrss
+
+            }
+
+            @Override
+            public void onFailure(int statusCode, Headers headers, String response, Throwable throwable) {
+                Log.d("DEBUG", "Fetch timeline error: " + response);
+            }
+        }, id);
     }
 
     @Override
@@ -147,8 +209,30 @@ public class TimelineActivity extends AppCompatActivity {
                 Log.i(TAG, "onSuccess!");
                 JSONArray jsonArray = json.jsonArray;
                 try {
-                    tweets.addAll(Tweet.fromJsonArray(jsonArray));
-                    adapter.notifyDataSetChanged();
+                    List<Tweet>tweetsFromNetwork = Tweet.fromJsonArray(jsonArray);
+                   //Log.d("Sarthak", String.valueOf(tweetsFromNetwork));
+
+                    adapter.clear();
+                    tweets.addAll(tweetsFromNetwork);
+                    //adapter.addAll(tweetsFromNetwork);
+                    max_id = getMinId(tweets);
+                   adapter.notifyDataSetChanged();
+                    swipeContainer.setRefreshing(false);
+          /*       AsyncTask.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.i(TAG, "Saving data into the database");
+
+                            // insert users first
+                          //  Log.d("Sarthak", String.valueOf(tweetsFromNetwork));
+                            List<User> usersFromNetwork = User.fromJsonTweetArray(tweetsFromNetwork);
+                           // Log.d("Sarthak", String.valueOf(usersFromNetwork));
+                            tweetDao.insertModel(usersFromNetwork.toArray(new Tweet[0]));
+                            //insert tweets
+                            tweetDao.insertModel(tweetsFromNetwork.toArray(new Tweet[0]));
+                        }
+                    });*/
+
                 } catch (JSONException e) {
                     Log.e(TAG, "Json exception", e);
                     e.printStackTrace();
@@ -162,8 +246,19 @@ public class TimelineActivity extends AppCompatActivity {
         });
     }
 
+    private static long getMinId(List<Tweet> tweets) {
+        long id = Long.MAX_VALUE;
+        for (int i = 0; i<tweets.size(); i++) {
+           // Log.d("TimelineActivity", " " + tweets.get(i).id);
+            if (tweets.get(i).id < id && tweets.get(i).id>1) {
+                id = tweets.get(i).id;
+            }
+        }
+        return id;
+    }
 
-// TimelineActivity.java
+
+    // TimelineActivity.java
     public void onLogoutButton(View view) {
 
         finish();
