@@ -24,12 +24,12 @@ The following **required** functionality is completed:
 
 The following **optional** features are implemented:
 
-* [ ] User is using **"Twitter branded" colors and styles**
-* [ ] User sees an **indeterminate progress indicator** when any background or network task is happening
+* [x] User is using **"Twitter branded" colors and styles**
+* [x] User sees an **indeterminate progress indicator** when any background or network task is happening
 * [ ] User can **select "reply" from home timeline to respond to a tweet**
-  * [ ] User that wrote the original tweet is **automatically "@" replied in compose**
+* [ ] User that wrote the original tweet is **automatically "@" replied in compose**
 * [ ] User can tap a tweet to **open a detailed tweet view**
-  * [ ] User can **take favorite (and unfavorite) or retweet** actions on a tweet
+* [ ] User can **take favorite (and unfavorite) or retweet** actions on a tweet
 * [ ] User can view more tweets as they scroll with infinite pagination
 * [ ] Compose tweet functionality is built using modal overlay
 * [ ] User can **click a link within a tweet body** on tweet details view. The click will launch the web browser with relevant page opened.
@@ -37,7 +37,7 @@ The following **optional** features are implemented:
 * [ ] User can view following / followers list through any profile they view.
 * [ ] Use the View Binding library to reduce view boilerplate.
 * [ ] On the Twitter timeline, apply scrolling effects such as [hiding/showing the toolbar](http://guides.codepath.org/android/Using-the-App-ToolBar#reacting-to-scroll) by implementing [CoordinatorLayout](http://guides.codepath.org/android/Handling-Scrolls-with-CoordinatorLayout#responding-to-scroll-events).
-* [ ] User can **open the twitter app offline and see last loaded tweets**. Persisted in SQLite tweets are refreshed on every application launch. While "live data" is displayed when app can get it from Twitter API, it is also saved for use in offline mode.
+* [x] User can **open the twitter app offline and see last loaded tweets**. Persisted in SQLite tweets are refreshed on every application launch. While "live data" is displayed when app can get it from Twitter API, it is also saved for use in offline mode.
 
 The following **additional** features are implemented:
 
